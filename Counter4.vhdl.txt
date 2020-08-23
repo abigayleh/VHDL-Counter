@@ -1,0 +1,153 @@
+LIBRARY IEEE;
+use ieee.std_logic_1164.all;
+USE IEEE.NUMERIC_STD.ALL;
+
+-- 20 BIT COUNTER
+ENTITY COUNTER4 IS
+	--Inputs: Clock (max count), clear counter (reset), L: counter bits
+	PORT (CLK, clrcnt: IN STD_LOGIC;
+			-- Output: 
+			--Takes in maxcount of 60 second counter
+			MAXCOUNT: IN STD_LOGIC;
+			
+			--Takes in inputs from switches
+			INPUTA: IN UNSIGNED(3 DOWNTO 0);
+			INPUTB: IN UNSIGNED(3 DOWNTO 0);
+			INPUTC: IN UNSIGNED(3 DOWNTO 0);
+			INPUTD: IN UNSIGNED(3 DOWNTO 0);
+			
+			--Outputs the hexadecimal value of each clock number:
+			--Seconds:
+			HIGHNUM: OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+			LOWNUM: OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+			--Minutes:
+			HIGHMIN: OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+			LOWMIN: OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+			--Hour:
+			HIGHHOUR: OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+			LOWHOUR: OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+			);
+			
+END COUNTER4;
+
+ARCHITECTURE RTL OF COUNTER4 IS
+	--	Signals to act as the changing ouputs
+	SIGNAL HIGHCNT: UNSIGNED(3 DOWNTO 0) := "0000";
+	SIGNAL LOWCNT: UNSIGNED(3 DOWNTO 0) := "0000"; 
+	
+	SIGNAL HMINCNT: UNSIGNED(3 DOWNTO 0) := INPUTB;
+	SIGNAL LMINCNT: UNSIGNED(3 DOWNTO 0) := INPUTA;
+	
+	SIGNAL HHOURCNT: UNSIGNED(3 DOWNTO 0) := INPUTD;
+	SIGNAL LHOURCNT: UNSIGNED(3 DOWNTO 0) := INPUTC;
+	
+	--Signals for the inputs, if they differ the values know to change to the changed switch input
+	SIGNAL ORGA: UNSIGNED(3 DOWNTO 0) := INPUTA;
+	SIGNAL ORGB: UNSIGNED(3 DOWNTO 0) := INPUTB; 
+	SIGNAL ORGC: UNSIGNED(3 DOWNTO 0) := INPUTC;
+	SIGNAL ORGD: UNSIGNED(3 DOWNTO 0) := INPUTD; 
+	
+	BEGIN
+
+	PROCESS(CLK, clrcnt)
+	BEGIN
+	
+	IF(RISING_EDGE(CLK)) THEN	
+	
+		IF(ORGA /= 	INPUTA OR ORGB /= INPUTB OR ORGC /= INPUTC OR ORGD /= INPUTD) THEN
+		
+			ORGA <= INPUTA;
+			ORGB <= INPUTB;
+			ORGC <= INPUTC;
+			ORGD <= INPUTD;
+			
+			HMINCNT <= INPUTB;
+			LMINCNT <= INPUTA;
+			HHOURCNT <= INPUTD;
+			LHOURCNT <= INPUTC;
+		
+		END IF;
+		
+		IF(CLRCNT = '0') THEN
+			HIGHCNT <= "0000";
+			LOWCNT <= "0000";
+			
+			HMINCNT <= "0000";
+			LMINCNT <= "0000";
+			
+			HHOURCNT <= "0000";
+			LHOURCNT <= "0000";
+		END IF;
+		
+		IF(MAXCOUNT = '1') THEN
+			
+			--24:59:59
+			IF(HHOURCNT = "0010" AND LHOURCNT = "0100" AND HMINCNT = "0101" AND LMINCNT = "1001" AND HIGHCNT = "0101" AND LOWCNT = "1001") THEN
+				
+				LHOURCNT <= "0000";
+				HHOURCNT <= "0000";
+				HMINCNT <= "0000";
+				LMINCNT <= "0000";
+				HIGHCNT <= "0000";
+				LOWCNT <= "0000";
+				
+			--	X9:59:59
+			ELSIF(LHOURCNT = "1001" AND HMINCNT = "0101" AND LMINCNT = "1001" AND HIGHCNT = "0101" AND LOWCNT = "1001") THEN
+				LHOURCNT <= "0000";
+				HMINCNT <= "0000";
+				LMINCNT <= "0000";
+				HIGHCNT <= "0000";
+				LOWCNT <= "0000";
+				
+				HHOURCNT <= HHOURCNT + 1;
+				
+			--XX:59:59
+			ELSIF(HMINCNT = "0101" AND LMINCNT = "1001" AND HIGHCNT = "0101" AND LOWCNT = "1001") THEN
+				LMINCNT <= "0000";
+				HMINCNT <= "0000";
+				HIGHCNT <= "0000";
+				LOWCNT <= "0000";
+				
+				LHOURCNT <= LHOURCNT + 1;
+				
+			--XX:X9:59	
+			ELSIF(LMINCNT = "1001" AND HIGHCNT = "0101" AND LOWCNT = "1001") THEN
+				LMINCNT <= "0000";
+				HIGHCNT <= "0000";
+				LOWCNT <= "0000";
+				
+				HMINCNT <= HMINCNT + 1;
+				
+			--XX:XX:59
+			ELSIF(HIGHCNT = "0101" AND LOWCNT = "1001") then
+				HIGHCNT <= "0000";
+				LOWCNT <= "0000";
+				
+				LMINCNT <= LMINCNT + 1;
+				
+			--XX:XX:X9	
+			ELSIF(LOWCNT = "1001") THEN
+				LOWCNT <= "0000";
+				
+				HIGHCNT <= HIGHCNT + 1;
+
+				
+			ELSE
+				LOWCNT <= LOWCNT + 1;
+		
+			END IF;
+		END IF;
+		
+		LOWNUM <= std_logic_vector(LOWCNT);	
+		HIGHNUM <= std_logic_vector(HIGHCNT);	
+		
+		LOWMIN <= std_logic_vector(LMINCNT);	
+		HIGHMIN <= std_logic_vector(HMINCNT);
+		
+		LOWHOUR <= std_logic_vector(LHOURCNT);	
+		HIGHHOUR <= std_logic_vector(HHOURCNT);
+	END IF;
+	END PROCESS;
+	
+
+END RTL;

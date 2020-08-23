@@ -1,0 +1,41 @@
+LIBRARY IEEE;
+use ieee.std_logic_1164.all;
+USE IEEE.NUMERIC_STD.ALL;
+
+-- 20 BIT COUNTER
+ENTITY COUNTER60 IS
+	--Inputs: Clock (max count), clear counter (reset), L: counter bits
+	PORT (CLK, clrcnt: IN STD_LOGIC;
+			-- Output: 
+			MAXCOUNT: OUT STD_LOGIC);
+END COUNTER60;
+
+ARCHITECTURE RTL OF COUNTER60 IS
+	SIGNAL CNT: UNSIGNED(25 DOWNTO 0) := "00000000000000000000000000";
+	
+BEGIN
+
+	PROCESS(CLK, clrcnt)
+	BEGIN
+	
+	IF(RISING_EDGE(CLK)) THEN
+		IF(CLRCNT = '0') THEN
+			--Go back to zero if reset is high
+			CNT <= "00000000000000000000000000";
+		end if;
+		
+		
+		IF(CNT = "10111110101111000010000000") THEN
+			MAXCOUNT <= '1';
+			CNT <= "00000000000000000000000000";
+
+		ELSE
+			MAXCOUNT <= '0';
+			CNT <= CNT + 1;
+		END IF;
+			
+	END IF;
+		
+	END PROCESS;
+	
+END RTL;
